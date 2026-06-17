@@ -1,11 +1,11 @@
 extends Node2D
 
-const BulletScene = preload("res://scripts/bullet.gd")
-const PlayerScene = preload("res://scripts/player_tank.gd")
-const EnemyScene = preload("res://scripts/enemy_tank.gd")
+const BulletScene: Script = preload("res://scripts/bullet.gd")
+const PlayerScene: Script = preload("res://scripts/player_tank.gd")
+const EnemyScene: Script = preload("res://scripts/enemy_tank.gd")
 
-const TILE = 32
-const MAP = [
+const TILE: int = 32
+const MAP: Array[String] = [
 	"##############################",
 	"#............##............###",
 	"#..BB..SS....##....SS..BB....#",
@@ -57,8 +57,9 @@ func _build_arena() -> void:
 	world.add_child(floor)
 
 	for row in range(MAP.size()):
-		for col in range(MAP[row].length()):
-			var tile := MAP[row].substr(col, 1)
+		var row_text: String = MAP[row]
+		for col in range(row_text.length()):
+			var tile: String = row_text.substr(col, 1)
 			var position := Vector2(col * TILE + TILE / 2, row * TILE + TILE / 2)
 			match tile:
 				"#":
@@ -124,7 +125,7 @@ func _add_base(center: Vector2) -> void:
 
 
 func _spawn_player() -> void:
-	player = PlayerScene.new()
+	player = PlayerScene.new() as PlayerTank
 	player.position = Vector2(14 * TILE + TILE / 2, 14 * TILE + TILE / 2)
 	player.fired.connect(_spawn_bullet)
 	player.destroyed.connect(_on_player_destroyed)
@@ -132,14 +133,14 @@ func _spawn_player() -> void:
 
 
 func _spawn_enemies() -> void:
-	var spawn_points := [
+	var spawn_points: Array[Vector2] = [
 		Vector2(3 * TILE + TILE / 2, 2 * TILE + TILE / 2),
 		Vector2(14 * TILE + TILE / 2, 2 * TILE + TILE / 2),
 		Vector2(25 * TILE + TILE / 2, 2 * TILE + TILE / 2),
 		Vector2(23 * TILE + TILE / 2, 7 * TILE + TILE / 2),
 	]
 	for point in spawn_points:
-		var enemy := EnemyScene.new()
+		var enemy: EnemyTank = EnemyScene.new() as EnemyTank
 		enemy.position = point
 		enemy.fired.connect(_spawn_bullet)
 		enemy.destroyed.connect(_on_enemy_destroyed)
@@ -147,7 +148,7 @@ func _spawn_enemies() -> void:
 
 
 func _spawn_bullet(_tank: Tank, start_position: Vector2, direction: Vector2, team: String) -> void:
-	var bullet := BulletScene.new()
+	var bullet: Bullet = BulletScene.new() as Bullet
 	bullet.add_to_group("bullet")
 	bullets.add_child(bullet)
 	_build_bullet_visuals(bullet)
