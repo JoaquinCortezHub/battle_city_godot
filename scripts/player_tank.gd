@@ -19,5 +19,6 @@ func _physics_process(delta: float) -> void:
 	elif input_direction != Vector2.ZERO:
 		input_direction.x = 0.0
 	drive(input_direction)
-	if Input.is_action_just_pressed("shoot"):
+	var accept_pressed: bool = InputMap.has_action("ui_accept") and Input.is_action_pressed("ui_accept")
+	if Input.is_action_pressed("shoot") or accept_pressed or Input.is_key_pressed(KEY_SPACE):
 		shoot()

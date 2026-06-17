@@ -2,7 +2,7 @@ class_name Bullet
 extends Area2D
 
 signal hit_brick(block: Node)
-signal hit_base
+signal hit_base(team: String)
 signal hit_tank(tank: Node)
 
 const SPEED = 430.0
@@ -39,7 +39,7 @@ func _on_body_entered(body: Node) -> void:
 	elif body.is_in_group("steel") or body.is_in_group("arena_wall"):
 		queue_free()
 	elif body.is_in_group("base"):
-		hit_base.emit()
+		hit_base.emit(owner_team)
 		queue_free()
 	elif body.is_in_group("tank"):
 		if body.team != owner_team:

@@ -14,7 +14,9 @@ const CELL = 32.0
 
 var facing := Vector2.UP
 var alive := true
+var invulnerable := false
 var _fire_timer := 0.0
+var _invulnerable_timer := 0.0
 
 
 func _ready() -> void:
@@ -25,6 +27,11 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_fire_timer = maxf(0.0, _fire_timer - delta)
+	if _invulnerable_timer > 0.0:
+		_invulnerable_timer = maxf(0.0, _invulnerable_timer - delta)
+		if _invulnerable_timer == 0.0:
+			invulnerable = false
+			modulate = Color.WHITE
 
 
 func drive(input_direction: Vector2) -> void:
@@ -46,11 +53,17 @@ func shoot() -> void:
 
 
 func take_hit() -> void:
-	if not alive:
+	if not alive or invulnerable:
 		return
 	alive = false
 	destroyed.emit(self)
 	queue_free()
+
+
+func make_invulnerable(seconds: float) -> void:
+	invulnerable = true
+	_invulnerable_timer = seconds
+	modulate = Color(1.0, 1.0, 1.0, 0.55)
 
 
 func _build_collision() -> void:

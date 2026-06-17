@@ -5,6 +5,7 @@ const PlayerScene: Script = preload("res://scripts/player_tank.gd")
 const EnemyScene: Script = preload("res://scripts/enemy_tank.gd")
 
 const TILE: int = 32
+const PLAYER_SPAWN: Vector2 = Vector2(16 * TILE + TILE / 2, 13 * TILE + TILE / 2)
 const MAP: Array[String] = [
 	"##############################",
 	"#............##............###",
@@ -28,6 +29,7 @@ var player: PlayerTank
 var score := 0
 var lives := 3
 var enemies_left := 4
+var base_health := 3
 var game_over := false
 
 @onready var world := Node2D.new()
@@ -126,18 +128,19 @@ func _add_base(center: Vector2) -> void:
 
 func _spawn_player() -> void:
 	player = PlayerScene.new() as PlayerTank
-	player.position = Vector2(14 * TILE + TILE / 2, 14 * TILE + TILE / 2)
+	player.position = PLAYER_SPAWN
 	player.fired.connect(_spawn_bullet)
 	player.destroyed.connect(_on_player_destroyed)
 	world.add_child(player)
+	player.make_invulnerable(1.5)
 
 
 func _spawn_enemies() -> void:
 	var spawn_points: Array[Vector2] = [
-		Vector2(3 * TILE + TILE / 2, 2 * TILE + TILE / 2),
-		Vector2(14 * TILE + TILE / 2, 2 * TILE + TILE / 2),
-		Vector2(25 * TILE + TILE / 2, 2 * TILE + TILE / 2),
-		Vector2(23 * TILE + TILE / 2, 7 * TILE + TILE / 2),
+		Vector2(3 * TILE + TILE / 2, 1 * TILE + TILE / 2),
+		Vector2(10 * TILE + TILE / 2, 2 * TILE + TILE / 2),
+		Vector2(18 * TILE + TILE / 2, 2 * TILE + TILE / 2),
+		Vector2(27 * TILE + TILE / 2, 3 * TILE + TILE / 2),
 	]
 	for point in spawn_points:
 		var enemy: EnemyTank = EnemyScene.new() as EnemyTank
@@ -154,7 +157,7 @@ func _spawn_bullet(_tank: Tank, start_position: Vector2, direction: Vector2, tea
 	_build_bullet_visuals(bullet)
 	bullet.setup(start_position, direction, team)
 	bullet.hit_brick.connect(_on_bullet_hit_brick)
-	bullet.hit_base.connect(_on_base_destroyed)
+	bullet.hit_base.connect(_on_base_hit)
 	bullet.hit_tank.connect(_on_bullet_hit_tank)
 
 
@@ -208,20 +211,43 @@ func _on_enemy_destroyed(_enemy: Tank) -> void:
 func _on_player_destroyed(_tank: Tank) -> void:
 	lives -= 1
 	if lives <= 0:
-		_on_base_destroyed()
+		_on_game_over("Derrota: el tanque se quedo sin vidas.")
 		return
-	_spawn_player()
 	_update_hud()
+	status_label.text = "Tanque destruido: reapareciendo con invulnerabilidad breve."
+	_clear_enemy_bullets_near_spawn()
+	await get_tree().create_timer(0.45).timeout
+	if not game_over:
+		_spawn_player()
+		_update_hud()
 
 
-func _on_base_destroyed() -> void:
+func _on_base_hit(_team: String) -> void:
+	if game_over:
+		return
+	base_health -= 1
+	if base_health <= 0:
+		_on_game_over("Derrota: la base fue destruida.")
+		return
+	_update_hud()
+	status_label.text = "Base golpeada: integridad restante %s/3." % base_health
+
+
+func _on_game_over(message: String) -> void:
 	game_over = true
-	status_label.text = "Derrota: la base fue destruida."
+	status_label.text = message
 	if is_instance_valid(player):
 		player.queue_free()
 
 
+func _clear_enemy_bullets_near_spawn() -> void:
+	var spawn_global := world.to_global(PLAYER_SPAWN)
+	for bullet in bullets.get_children():
+		if bullet is Bullet and bullet.owner_team == "enemy" and bullet.global_position.distance_to(spawn_global) < TILE * 4:
+			bullet.queue_free()
+
+
 func _update_hud() -> void:
-	score_label.text = "Battle City Godot  |  Puntos: %s  |  Vidas: %s  |  Enemigos: %s" % [score, lives, enemies_left]
+	score_label.text = "Battle City Godot  |  Puntos: %s  |  Vidas: %s  |  Base: %s/3  |  Enemigos: %s" % [score, lives, base_health, enemies_left]
 	if not game_over:
 		status_label.text = "WASD para mover, Espacio para disparar. Objetivo: proteger la base inferior."
