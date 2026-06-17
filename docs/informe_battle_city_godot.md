@@ -2,7 +2,7 @@
 
 **Materia:** Programacion Avanzada  
 **Entrega:** Proyecto individual de videojuego  
-**Alumno:** Joaquin Cortez  
+**Grupo:** Cortez, Meregalli y Lorenzo  
 **Fecha:** 17 de junio de 2026  
 
 ## 1. Presentacion del proyecto
