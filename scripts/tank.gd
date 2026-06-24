@@ -24,7 +24,7 @@ func _ready() -> void:
 	_build_visuals()
 	_build_collision()
 
-
+# Baja tiempos de espera e invulnerabilidad en tiempo real
 func _physics_process(delta: float) -> void:
 	_fire_timer = maxf(0.0, _fire_timer - delta)
 	if _invulnerable_timer > 0.0:
@@ -33,7 +33,7 @@ func _physics_process(delta: float) -> void:
 			invulnerable = false
 			modulate = Color.WHITE
 
-
+# Toma el input del teclado y mueve el tanque en esa dirección
 func drive(input_direction: Vector2) -> void:
 	if not alive:
 		return
@@ -43,7 +43,7 @@ func drive(input_direction: Vector2) -> void:
 	velocity = input_direction.normalized() * speed
 	move_and_slide()
 
-
+# Hace que el tanque dispare y pone su disparo en cooldown
 func shoot() -> void:
 	if not alive or _fire_timer > 0.0:
 		return
@@ -51,7 +51,7 @@ func shoot() -> void:
 	var muzzle := global_position + facing.normalized() * 26.0
 	fired.emit(self, muzzle, facing, team)
 
-
+# Se ejecuta cuando le pegan al tanque
 func take_hit() -> void:
 	if not alive or invulnerable:
 		return
@@ -59,13 +59,13 @@ func take_hit() -> void:
 	destroyed.emit(self)
 	queue_free()
 
-
+# Hace al tanque invulnerable
 func make_invulnerable(seconds: float) -> void:
 	invulnerable = true
 	_invulnerable_timer = seconds
 	modulate = Color(1.0, 1.0, 1.0, 0.55)
 
-
+# Asegura que el tanque se choque con los bloques de pared
 func _build_collision() -> void:
 	var collision := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
@@ -73,7 +73,7 @@ func _build_collision() -> void:
 	collision.shape = rect
 	add_child(collision)
 
-
+# Construye las visuales del tanque
 func _build_visuals() -> void:
 	var body := ColorRect.new()
 	body.name = "Body"

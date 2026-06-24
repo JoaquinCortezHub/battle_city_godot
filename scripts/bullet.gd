@@ -16,22 +16,22 @@ func _ready() -> void:
 	area_entered.connect(_on_area_entered)
 	body_entered.connect(_on_body_entered)
 
-
+# Configura la bala cuando aparece siendo disparada
 func setup(start_position: Vector2, shoot_direction: Vector2, team: String) -> void:
 	global_position = start_position
 	direction = shoot_direction.normalized()
 	owner_team = team
 	rotation = direction.angle() + PI / 2.0
 
-
+# Va a ir moviendo la bala en cada frame
 func _physics_process(delta: float) -> void:
 	var step := direction * SPEED * delta
 	global_position += step
 	travelled += step.length()
-	if travelled > max_distance:
+	if travelled > max_distance: # Si la bala recorre su distancia máxima, desaparece
 		queue_free()
 
-
+# Acá nos aseguramos de que la bala no aparezca sobre otros objetos
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("brick"):
 		hit_brick.emit(body)
@@ -46,7 +46,7 @@ func _on_body_entered(body: Node) -> void:
 			hit_tank.emit(body)
 			queue_free()
 
-
+# Maneja el comportamiento entre balas, si dos balas "enemigas" se tocan, desaparecen
 func _on_area_entered(area: Area2D) -> void:
 	if area.is_in_group("bullet") and area.owner_team != owner_team:
 		area.queue_free()

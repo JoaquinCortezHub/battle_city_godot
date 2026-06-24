@@ -10,7 +10,7 @@ func _ready() -> void:
 	fire_cooldown = 0.45
 	super()
 
-
+# Va a ir tomando el input del usuario para moverse y para ir disparando
 func _physics_process(delta: float) -> void:
 	super(delta)
 	var input_direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")

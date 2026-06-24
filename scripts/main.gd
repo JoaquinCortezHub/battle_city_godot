@@ -4,9 +4,14 @@ const BulletScene: Script = preload("res://scripts/bullet.gd")
 const PlayerScene: Script = preload("res://scripts/player_tank.gd")
 const EnemyScene: Script = preload("res://scripts/enemy_tank.gd")
 
-const TILE: int = 32
-const PLAYER_SPAWN: Vector2 = Vector2(16 * TILE + TILE / 2, 13 * TILE + TILE / 2)
+const TILE: int = 32 # Tamaño del mapa
+const PLAYER_SPAWN: Vector2 = Vector2(16 * TILE + TILE / 2, 13 * TILE + TILE / 2) #Nuestro spawn
 const MAP: Array[String] = [
+	#"#" = pared exterior
+	#"B" = ladrillo destructible
+	#"S" = metal no destructible
+	#"E" = base
+	#"." = espacio vacío
 	"##############################",
 	"#............##............###",
 	"#..BB..SS....##....SS..BB....#",
@@ -25,6 +30,7 @@ const MAP: Array[String] = [
 	"##############################",
 ]
 
+# Variables globales de estado
 var player: PlayerTank
 var score := 0
 var lives := 3
@@ -39,7 +45,7 @@ var game_over := false
 @onready var status_label := Label.new()
 
 
-func _ready() -> void:
+func _ready() -> void: # Preparo el juego cuando arranca el script
 	RenderingServer.set_default_clear_color(Color("#14171f"))
 	world.position = Vector2(0, 96)
 	add_child(world)
@@ -51,7 +57,7 @@ func _ready() -> void:
 	_build_hud()
 	_update_hud()
 
-
+# Arma el mapa leyendo la variable MAP
 func _build_arena() -> void:
 	var floor := ColorRect.new()
 	floor.color = Color("#202532")
@@ -63,7 +69,7 @@ func _build_arena() -> void:
 		for col in range(row_text.length()):
 			var tile: String = row_text.substr(col, 1)
 			var position := Vector2(col * TILE + TILE / 2, row * TILE + TILE / 2)
-			match tile:
+			match tile: #Según lo que leamos de MAP, creamos un bloque distinto
 				"#":
 					_add_block(position, Color("#363c49"), "arena_wall", false)
 				"B":
@@ -73,7 +79,7 @@ func _build_arena() -> void:
 				"E":
 					_add_base(position)
 
-
+# Genera los bloques según los parámetros que le pasamos en _build_arena
 func _add_block(center: Vector2, color: Color, group_name: String, destructible: bool) -> void:
 	var block := StaticBody2D.new()
 	block.position = center
@@ -100,7 +106,7 @@ func _add_block(center: Vector2, color: Color, group_name: String, destructible:
 		stripe.position = Vector2(-(TILE - 2) / 2, -2)
 		block.add_child(stripe)
 
-
+# Generamos la base, agregandola a la categoría "Base" para diferenciarla de los otros bloques
 func _add_base(center: Vector2) -> void:
 	var base := StaticBody2D.new()
 	base.position = center
@@ -125,7 +131,7 @@ func _add_base(center: Vector2) -> void:
 	core.position = Vector2(-6, -6)
 	base.add_child(core)
 
-
+# Hace aparecer al tanque del jugador
 func _spawn_player() -> void:
 	player = PlayerScene.new() as PlayerTank
 	player.position = PLAYER_SPAWN
@@ -134,7 +140,7 @@ func _spawn_player() -> void:
 	world.add_child(player)
 	player.make_invulnerable(1.5)
 
-
+# Hace aparecer a los tanques enemigos y les asigna sus acciones como disparar o ser destruidos
 func _spawn_enemies() -> void:
 	var spawn_points: Array[Vector2] = [
 		Vector2(3 * TILE + TILE / 2, 1 * TILE + TILE / 2),
@@ -149,7 +155,7 @@ func _spawn_enemies() -> void:
 		enemy.destroyed.connect(_on_enemy_destroyed)
 		world.add_child(enemy)
 
-
+# Hace que los tanques puedan disparar, y determina que pasa cuando la bala toca distintos bloques
 func _spawn_bullet(_tank: Tank, start_position: Vector2, direction: Vector2, team: String) -> void:
 	var bullet: Bullet = BulletScene.new() as Bullet
 	bullet.add_to_group("bullet")
@@ -160,7 +166,7 @@ func _spawn_bullet(_tank: Tank, start_position: Vector2, direction: Vector2, tea
 	bullet.hit_base.connect(_on_base_hit)
 	bullet.hit_tank.connect(_on_bullet_hit_tank)
 
-
+# Le asigna las visuales a la bala
 func _build_bullet_visuals(bullet: Bullet) -> void:
 	var collision := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
@@ -174,7 +180,7 @@ func _build_bullet_visuals(bullet: Bullet) -> void:
 	visual.position = Vector2(-3, -6)
 	bullet.add_child(visual)
 
-
+# Crea la barra de texto con la info de la partida
 func _build_hud() -> void:
 	var panel := ColorRect.new()
 	panel.color = Color("#10131acc")
@@ -189,16 +195,18 @@ func _build_hud() -> void:
 	status_label.add_theme_font_size_override("font_size", 16)
 	hud.add_child(status_label)
 
+### funciones que determinan el comportamiento de la bala cuando impacta con ciertos bloques
 
+# Establece que pasa cuando una bala le pega a un ladrillo
 func _on_bullet_hit_brick(block: Node) -> void:
 	block.queue_free()
 
-
+# Establece que pasa cuando una bala le pega a un tanque
 func _on_bullet_hit_tank(tank: Node) -> void:
 	if tank.has_method("take_hit"):
 		tank.take_hit()
 
-
+# Establece que pasa cuando un enemigo se destruye, y determina si la partida termina
 func _on_enemy_destroyed(_enemy: Tank) -> void:
 	score += 100
 	enemies_left -= 1
@@ -207,7 +215,7 @@ func _on_enemy_destroyed(_enemy: Tank) -> void:
 		status_label.text = "Victoria: defendiste la base y eliminaste todos los tanques enemigos."
 	_update_hud()
 
-
+# Establece lo que pasa cuando nos mata un tanque enemigo
 func _on_player_destroyed(_tank: Tank) -> void:
 	lives -= 1
 	if lives <= 0:
@@ -221,7 +229,7 @@ func _on_player_destroyed(_tank: Tank) -> void:
 		_spawn_player()
 		_update_hud()
 
-
+# Establece que pasa cuando le pegan a nuestra base
 func _on_base_hit(_team: String) -> void:
 	if game_over:
 		return
@@ -232,21 +240,21 @@ func _on_base_hit(_team: String) -> void:
 	_update_hud()
 	status_label.text = "Base golpeada: integridad restante %s/3." % base_health
 
-
+# Establece lo que pasa cuando se termina la partida
 func _on_game_over(message: String) -> void:
 	game_over = true
 	status_label.text = message
 	if is_instance_valid(player):
 		player.queue_free()
 
-
+# Limpia las balas cerca de donde el jugador aparece para que no muera inmediatamente
 func _clear_enemy_bullets_near_spawn() -> void:
 	var spawn_global := world.to_global(PLAYER_SPAWN)
 	for bullet in bullets.get_children():
 		if bullet is Bullet and bullet.owner_team == "enemy" and bullet.global_position.distance_to(spawn_global) < TILE * 4:
 			bullet.queue_free()
 
-
+# Se encarga de ir actualizando los mensajes en el banner superior
 func _update_hud() -> void:
 	score_label.text = "Battle City Godot  |  Puntos: %s  |  Vidas: %s  |  Base: %s/3  |  Enemigos: %s" % [score, lives, base_health, enemies_left]
 	if not game_over:
